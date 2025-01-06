@@ -1,0 +1,17 @@
+name: ci-cd-devsecops
+run-name: ${{ github.actor }} Workflow SAST, SCA & Imagen Vuln 🚀
+on:
+  push:
+    branches:
+      - develop  # Solo se ejecuta en pushes a la rama principal
+
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: "ubuntu-latest"
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+
+      - name: Ejecutar analisis SAST
+        uses: ./.github/actions/SAST
