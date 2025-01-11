@@ -2,6 +2,8 @@ name: Build
 on:
   push:
     branches:
+      - master
+      - main
       - 3 – cursosseguridad-patch-1
   pull_request:
     types: [opened, synchronize, reopened]
