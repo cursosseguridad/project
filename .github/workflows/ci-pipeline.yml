@@ -1,0 +1,93 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Análisis de calidad y seguridad del código (SonarCloud)
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Clonación completa para análisis relevante
+
+      # 2. Configurar Java (requerido por SonarCloud)
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+
+      # 3. Ejecutar análisis con SonarCloud
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Análisis de dependencias con OWASP Dependency-Check
+  sca:
+    name: Dependency Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Ejecutar OWASP Dependency-Check
+      - name: Run OWASP Dependency-Check
+        run: |
+          docker run --rm \
+            -v "$(pwd):/src" \
+            -v "$(pwd)/dependency-check-data:/usr/share/dependency-check/data" \
+            -v "$(pwd)/dependency-check-report:/report" \
+            owasp/dependency-check:latest \
+            --scan /src \
+            --format "ALL" \
+            --out /report
+
+      # 3. Subir el reporte como artefacto
+      - name: Upload Dependency-Check Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-check-report
+          path: dependency-check-report/
+
+  # Construcción de la imagen Docker
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Construcción de la imagen Docker
+      - name: Build Docker Image
+        run: |
+          docker build -t arnaldoquezada/laboratorio-final:latest .
+
+  # Análisis de seguridad de la imagen Docker
+  docker-security:
+    name: Docker Image Security
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Escaneo de seguridad con Trivy
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@v0.12.0
+        with:
+          image-ref: arnaldoquezada/laboratorio-final:latest
