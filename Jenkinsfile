@@ -18,11 +18,11 @@ pipeline{
                 git branch: 'master', url: 'https://github.com/cursosseguridad/project'
             }
         }
-        stage("Sonarqube Analysis "){
+        stage("Analisis Sonarqube"){
             steps{
                 withSonarQubeEnv('sonar-server') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=zomato \
-                    -Dsonar.projectKey=zomato '''
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -X -Dsonar.projectName=usachdevsecops \
+                    -Dsonar.projectKey=jt '''
                 }
             }
         }
@@ -33,18 +33,18 @@ pipeline{
                 }
             }
         }
-        stage('Install Dependencies') {
+        stage('Instalacion de Dependencias') {
             steps {
                 sh "npm install"
             }
         }
-        stage('OWASP DEP CHK') {
+        stage('OWASP Dependency Check') {
             steps {
                 dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
-        stage('TRIVY FS SCAN') {
+        stage('TRIVY SCAN') {
             steps {
                 sh "trivy fs . > trivyfs.txt"
             }
@@ -53,26 +53,27 @@ pipeline{
             steps{
                 script{
                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
-                       sh "docker build -t zomato ."
-                       sh "docker tag zomato jay75chauhan/zomato:latest "
-                       sh "docker push jay75chauhan/zomato:latest "
+                       sh "docker build -t jt ."
+                       sh "docker tag jt dockerhubusach/docker:latest "
+                       sh "docker push dockerhubusach/docker:latest "
                     }
                 }
             }
         }
         stage("TRIVY"){
             steps{
-                sh "trivy image jay75chauhan/zomato:latest > trivy.txt"
+                sh "trivy image dockerhubusach/docker:latest > trivy.txt"
             }
         }
-        stage('Deploy to container'){
+        stage('Despliegue a container'){
             steps{
                 script{
                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
-                       sh 'docker run -d --name zomato -p 3000:3000 jay75chauhan/zomato:latest'
+                       sh 'docker run -d --name devsecops -p 3002:3002 dockerhubusach/docker:latest'
                     }
                 }
             }
         }
+
     }
 }
